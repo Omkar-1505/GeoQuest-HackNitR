@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/models/discovery.dart';
 import 'package:frontend/screens/cameraScreen.dart';
 import 'package:frontend/screens/imagePreviewScreen.dart';
+import 'package:frontend/screens/storedImageScreen.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';

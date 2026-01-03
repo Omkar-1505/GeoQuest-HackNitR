@@ -1,6 +1,7 @@
 // ignore_for_file: unused_element, unused_field, unused_local_variable
 
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:frontend/models/discovery.dart';
@@ -28,6 +29,13 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadLocations();
+    loadDiscoveries();
+  }
+
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    super.dispose();
   }
 
   // Go to current loacation of user
@@ -127,7 +135,159 @@ class _HomeScreenState extends State<HomeScreen> {
   // }
   @override
   Widget build(BuildContext context) {
-    return Scaffold();
+    if (_initialCameraPosition == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    return Scaffold(
+      body: Stack(
+        children: [
+          // MAP
+          GoogleMap(
+            initialCameraPosition: _initialCameraPosition!,
+            markers: _markers,
+            myLocationEnabled: true,
+            myLocationButtonEnabled: false,
+            zoomControlsEnabled: false,
+            compassEnabled: false,
+            mapToolbarEnabled: false,
+            tiltGesturesEnabled: true,
+            rotateGesturesEnabled: true,
+            buildingsEnabled: true,
+            indoorViewEnabled: true,
+            mapType: MapType.normal,
+            onMapCreated: (controller) {
+              _mapController = controller;
+            },
+          ),
+
+          /// TOP GLASS APP BAR
+          Positioned(
+            top: 50,
+            left: 16,
+            right: 16,
+            child: _glassContainer(
+              height: 72,
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: _goToCurrentLocation,
+                    icon: const Icon(Icons.my_location, color: Colors.white),
+                  ),
+                  const Expanded(
+                    child: Center(
+                      child: Text(
+                        'GeoQuest',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const StoredImageScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.photo_library, color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          /// CAMERA FLOATING BUTTON
+          Positioned(
+            bottom: 130,
+            right: 10,
+            child: GestureDetector(
+              onTap: () => openCamera(context),
+              child: Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [Colors.greenAccent, Colors.tealAccent],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.greenAccent.withOpacity(0.6),
+                      blurRadius: 24,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.camera_alt,
+                  color: Colors.black,
+                  size: 32,
+                ),
+              ),
+            ),
+          ),
+
+          /// BOTTOM GLASS NAV
+          Positioned(
+            bottom: 24,
+            left: 16,
+            right: 16,
+            child: _glassContainer(
+              height: 68,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: const [
+                  Icon(Icons.person_outline, color: Colors.white, size: 28),
+                  Icon(Icons.home_filled, color: Colors.white, size: 30),
+                  Icon(Icons.settings_outlined, color: Colors.white, size: 28),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// GLASS CONTAINER
+  Widget _glassContainer({required double height, required Widget child}) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: [
+          BoxShadow(
+            color: const Color.fromARGB(255, 255, 255, 255).withOpacity(0.6),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(26),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+          child: Container(
+            height: height,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(26),
+              color: Colors.black.withOpacity(0.45),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.08),
+                width: 1,
+              ),
+            ),
+            child: child,
+          ),
+        ),
+      ),
+    );
   }
 }
 

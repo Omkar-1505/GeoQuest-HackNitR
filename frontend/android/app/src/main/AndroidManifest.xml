@@ -10,9 +10,13 @@
         android:name="android.hardware.camera"
         android:required="false" />
     <application
-        android:label="frontend"
+        android:label="GeoQuest"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- Google Maps API Key -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyA4ByHD_bYHWs8yfoYQSomruXhXsEmymdk" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

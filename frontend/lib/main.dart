@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/home.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 void main() {
@@ -22,6 +23,7 @@ class _MyAppState extends State<MyApp> {
           ThemeData.light(useMaterial3: true).textTheme,
         ).apply(decoration: TextDecoration.none),
       ),
+      home: HomeScreen(),
     );
   }
 }

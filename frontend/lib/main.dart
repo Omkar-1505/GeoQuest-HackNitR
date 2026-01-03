@@ -1,8 +1,15 @@
+import 'package:camera/camera.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:frontend/screens/home.dart';
+import 'package:frontend/firebase_options.dart';
+import 'package:frontend/screens/authScreen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-void main() {
+late List<CameraDescription> cameras;
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  cameras = await availableCameras();
+  await Firebase.initializeApp();
   runApp(MyApp());
 }
 
@@ -23,7 +30,7 @@ class _MyAppState extends State<MyApp> {
           ThemeData.light(useMaterial3: true).textTheme,
         ).apply(decoration: TextDecoration.none),
       ),
-      home: HomeScreen(),
+      home: LoginPage(),
     );
   }
 }

@@ -78,7 +78,9 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => ImagePreviewScreen()),
+            MaterialPageRoute(
+              builder: (_) => ImagePreviewScreen(imagePath: d.imagePath),
+            ),
           );
         },
       );
@@ -129,7 +131,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => ImagePreviewScreen()),
+      MaterialPageRoute(
+        builder: (_) => ImagePreviewScreen(imagePath: imagePath),
+      ),
     );
   }
 

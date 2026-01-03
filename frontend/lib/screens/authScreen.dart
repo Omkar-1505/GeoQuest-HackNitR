@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:frontend/screens/home.dart';
 import '../auth_service.dart'; // Import your AuthService file
 
 class LoginPage extends StatefulWidget {
@@ -15,25 +16,40 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoading = true);
 
-    // Call your fixed AuthService
-    final userCredential = await AuthService().signInWithGoogle();
+    try {
+      // Call your fixed AuthService
+      final userCredential = await AuthService().signInWithGoogle(context);
 
-    setState(() => _isLoading = false);
-
-    if (userCredential != null) {
-      // Navigate to Home Page on success
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomePagePlaceholder()),
-        );
+        setState(() => _isLoading = false);
       }
-    } else {
-      // Show error snackbar if failed
+
+      if (userCredential != null) {
+        // Navigate to Home Page on success
+        if (mounted) {
+          Navigator.of(
+            context,
+          ).pushReplacement(MaterialPageRoute(builder: (_) => HomeScreen()));
+        }
+      } else {
+        // Cancelled by user
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Sign in cancelled"),
+              backgroundColor: Colors.orangeAccent,
+            ),
+          );
+        }
+      }
+    } catch (e) {
       if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Sign in failed. Please try again."),
+          SnackBar(
+            content: Text("Sign in failed: $e"),
             backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -55,7 +71,7 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Spacer(),
-                
+
                 // --- Logo or App Icon ---
                 Container(
                   height: 100,
@@ -70,7 +86,7 @@ class _LoginPageState extends State<LoginPage> {
                     color: Colors.blueAccent,
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
 
                 // --- Welcome Text ---
@@ -102,11 +118,17 @@ class _LoginPageState extends State<LoginPage> {
                         child: ElevatedButton(
                           onPressed: _handleGoogleSignIn,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isDark ? Colors.grey[800] : Colors.white,
-                            foregroundColor: isDark ? Colors.white : Colors.black87,
+                            backgroundColor: isDark
+                                ? Colors.grey[800]
+                                : Colors.white,
+                            foregroundColor: isDark
+                                ? Colors.white
+                                : Colors.black87,
                             elevation: 0,
                             side: BorderSide(
-                              color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+                              color: isDark
+                                  ? Colors.grey[700]!
+                                  : Colors.grey[300]!,
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -117,7 +139,11 @@ class _LoginPageState extends State<LoginPage> {
                             children: [
                               // Use an asset image here for the real Google logo
                               // Image.asset('assets/google_logo.png', height: 24),
-                              const Icon(Icons.g_mobiledata, size: 32, color: Colors.red), 
+                              const Icon(
+                                Icons.g_mobiledata,
+                                size: 32,
+                                color: Colors.red,
+                              ),
                               const SizedBox(width: 12),
                               const Text(
                                 "Continue with Google",
@@ -135,36 +161,6 @@ class _LoginPageState extends State<LoginPage> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// Temporary Home Page for navigation testing
-class HomePagePlaceholder extends StatelessWidget {
-  const HomePagePlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Home")),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text("Logged in as: ${FirebaseAuth.instance.currentUser?.email}"),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () async {
-                await AuthService().signOut();
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const LoginPage()),
-                );
-              },
-              child: const Text("Sign Out"),
-            )
-          ],
         ),
       ),
     );

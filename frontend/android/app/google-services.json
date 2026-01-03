@@ -1,33 +1,41 @@
 {
   "project_info": {
-    "project_number": "699235246168",
-    "project_id": "geoquest-f35a6",
-    "storage_bucket": "geoquest-f35a6.firebasestorage.app"
+    "project_number": "763234425950",
+    "project_id": "geoques-a3f77",
+    "storage_bucket": "geoques-a3f77.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:699235246168:android:013da01ace95e8a0e92a2d",
+        "mobilesdk_app_id": "1:763234425950:android:f0255bcb8d47e3fa7aa8cf",
         "android_client_info": {
           "package_name": "com.example.frontend"
         }
       },
       "oauth_client": [
         {
-          "client_id": "699235246168-hcgbv10k16sahq5k85oql1u36d8bcco6.apps.googleusercontent.com",
+          "client_id": "763234425950-q6p43gi8mdumo6246kg0l9tud77oinq8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.frontend",
+            "certificate_hash": "83bf330a86ad58b310a912a58208dc67ca961bb9"
+          }
+        },
+        {
+          "client_id": "763234425950-f40rcdg9hlljqkf5bnnsrf6u74ivv3aj.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyCmqvNXoRCzOl3IS4wxSk0sWaa-sFb380M"
+          "current_key": "AIzaSyCalX2krWuHcf0ebOJfHxR19EphqUvNS_4"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "699235246168-hcgbv10k16sahq5k85oql1u36d8bcco6.apps.googleusercontent.com",
+              "client_id": "763234425950-f40rcdg9hlljqkf5bnnsrf6u74ivv3aj.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

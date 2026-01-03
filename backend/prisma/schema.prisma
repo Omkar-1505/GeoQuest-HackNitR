@@ -7,93 +7,260 @@ datasource db {
   provider = "postgresql"
 }
 
+// model AIScan {
+//   id           String   @id
+//   userId       String
+//   imageUrl     String
+//   detectedName String
+//   confidence   Float
+//   usedCredit   Boolean
+//   createdAt    DateTime @default(now())
+//   User         User     @relation(fields: [userId], references: [id])
+
+//   @@index([userId])
+// }
+
+// model Discovery {
+//   id           String   @id
+//   userId       String
+//   objectId     String
+//   districtId   String
+//   latitude     Float
+//   longitude    Float
+//   imageUrl     String
+//   aiConfidence Float?
+//   rarityScore  Float
+//   verified     Boolean  @default(false)
+//   discoveredAt DateTime @default(now())
+//   District     District @relation(fields: [districtId], references: [id])
+//   Object       Object   @relation(fields: [objectId], references: [id])
+//   User         User     @relation(fields: [userId], references: [id])
+
+//   @@index([districtId])
+//   @@index([objectId])
+//   @@index([userId])
+// }
+
+// model District {
+//   id                   String                 @id
+//   country              String
+//   state                String
+//   district             String
+//   totalDiscoveries     Int                    @default(0)
+//   Discovery            Discovery[]
+//   DistrictObjectRarity DistrictObjectRarity[]
+
+//   @@unique([country, state, district])
+// }
+
+// model DistrictObjectRarity {
+//   id             String   @id
+//   districtId     String
+//   objectId       String
+//   discoveryCount Int      @default(0)
+//   District       District @relation(fields: [districtId], references: [id])
+//   Object         Object   @relation(fields: [objectId], references: [id])
+
+//   @@unique([districtId, objectId])
+// }
+
+// model Object {
+//   id                   String                 @id
+//   category             String
+//   commonName           String
+//   description          String?
+//   verified             Boolean                @default(false)
+//   createdByAI          Boolean                @default(true)
+//   totalDiscoveries     Int                    @default(0)
+//   createdAt            DateTime               @default(now())
+//   Discovery            Discovery[]
+//   DistrictObjectRarity DistrictObjectRarity[]
+// }
+
+model User {
+  id       String   @id @default(uuid())
+  name     String
+  password String
+  username String
+  email    String   @unique
+  photoUrl String?
+  joinedAt DateTime @default(now())
+
+  totalDiscoveries Int   @default(0)
+  avgRarityScore   Float @default(0)
+  rareDiscoveries  Int   @default(0)
+  xp               Int   @default(0)
+  level            Int   @default(1)
+
+  isPremium Boolean @default(false)
+  aiCredits Int     @default(5)
+
+  discoveries Discovery[]
+  aiScans     AIScan[]
+  // subscription      Subscription?
+
+  caretakerProfiles PlantCaretaker[]
+  careLogs          CareLog[]
+
+  @@index([username])
+}
+
 model AIScan {
-  id           String   @id
-  userId       String
+  id     String @id @default(uuid())
+  userId String
+
   imageUrl     String
   detectedName String
   confidence   Float
   usedCredit   Boolean
-  createdAt    DateTime @default(now())
-  User         User     @relation(fields: [userId], references: [id])
+  //HERE IF I WANT TO IMPLEMENT XP SYSTEM BASED ON RARITY OF PLANT
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }
 
 model Discovery {
-  id           String   @id
-  userId       String
-  objectId     String
-  districtId   String
-  latitude     Float
-  longitude    Float
+  id String @id @default(uuid())
+
+  userId     String
+  objectId   String
+  districtId String
+
+  plant Plant?
+
+  latitude  Float
+  longitude Float
+
   imageUrl     String
   aiConfidence Float?
   rarityScore  Float
+
   verified     Boolean  @default(false)
   discoveredAt DateTime @default(now())
-  District     District @relation(fields: [districtId], references: [id])
-  Object       Object   @relation(fields: [objectId], references: [id])
-  User         User     @relation(fields: [userId], references: [id])
+
+  user     User     @relation(fields: [userId], references: [id])
+  object   Object   @relation(fields: [objectId], references: [id])
+  district District @relation(fields: [districtId], references: [id])
 
   @@index([districtId])
   @@index([objectId])
   @@index([userId])
+  @@index([latitude, longitude])
 }
 
-model District {
-  id                   String                 @id
-  country              String
-  state                String
-  district             String
-  totalDiscoveries     Int                    @default(0)
-  Discovery            Discovery[]
-  DistrictObjectRarity DistrictObjectRarity[]
+model Plant {
+  id          String    @id @default(uuid())
+  discoveryId String    @unique
+  discovery   Discovery @relation(fields: [discoveryId], references: [id])
 
-  @@unique([country, state, district])
+  //this wil lgive me species info growingtips etc etc
+  objectId  String
+  object    Object @relation(fields: [objectId], references: [id])
+  latitude  Float
+  longitude Float
+
+  healthScore Int    @default(100) // 0-100
+  status      String @default("HEALTHY") // HEALTHY, WILTED, DORMANT
+
+  caretakers PlantCaretaker[]
+  logs       CareLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([latitude, longitude])
+}
+
+model PlantCaretaker {
+  id      String @id @default(uuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+  plantId String
+  plant   Plant  @relation(fields: [plantId], references: [id])
+
+  role String @default("GUARDIAN") // GUARDIAN (main), HELPER (backup)
+
+  // Streak Mechanics
+  currentStreak Int       @default(0)
+  longestStreak Int       @default(0)
+  lastLogDate   DateTime? // Crucial for calculating streaks
+
+  // Gamification
+  pointsEarned Int      @default(0)
+  joinedAt     DateTime @default(now())
+
+  @@unique([userId, plantId]) // A user can't be a caretaker twice for the same plant
+  @@index([userId])
+  @@index([plantId])
+}
+
+model CareLog {
+  id String @id @default(uuid())
+
+  plantId String
+  plant   Plant  @relation(fields: [plantId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  // What did they do?
+  action   String // "WATER", "PRUNE", "CHECK_IN", "PHOTO_UPDATE"
+  photoUrl String? // The daily photo
+
+  // Validation
+  locationVerified Boolean @default(true) // Checked via 30m radius logic
+
+  createdAt DateTime @default(now())
+
+  @@index([plantId])
+  @@index([userId])
+  @@index([createdAt]) // Useful for "Feed" queries
+}
+
+model Object {
+  id             String  @id @default(uuid())
+  category       String // "Plant", "Fungi","Flora"
+  commonName     String
+  scientificName String?
+  description    String?
+
+  verified Boolean @default(false)
+
+  totalDiscoveries Int                    @default(0)
+  discoveries      Discovery[]
+  rarityStats      DistrictObjectRarity[]
+  plants           Plant[]
+
+  createdAt DateTime @default(now())
 }
 
 model DistrictObjectRarity {
-  id             String   @id
-  districtId     String
-  objectId       String
-  discoveryCount Int      @default(0)
-  District       District @relation(fields: [districtId], references: [id])
-  Object         Object   @relation(fields: [objectId], references: [id])
+  id String @id @default(uuid())
+
+  districtId String
+  objectId   String
+
+  discoveryCount Int @default(0)
+
+  district District @relation(fields: [districtId], references: [id])
+  object   Object   @relation(fields: [objectId], references: [id])
 
   @@unique([districtId, objectId])
 }
 
-model Object {
-  id                   String                 @id
-  category             String
-  commonName           String
-  description          String?
-  verified             Boolean                @default(false)
-  createdByAI          Boolean                @default(true)
-  totalDiscoveries     Int                    @default(0)
-  createdAt            DateTime               @default(now())
-  Discovery            Discovery[]
-  DistrictObjectRarity DistrictObjectRarity[]
-}
+model District {
+  id       String @id // e.g. IN_OD_GANJAM
+  country  String
+  state    String
+  district String
 
-model User {
-  id               String      @id
-  email            String      @unique
-  aiCredits        Int         @default(5)
-  avgRarityScore   Float       @default(0)
-  isPremium        Boolean     @default(false)
-  joinedAt         DateTime    @default(now())
-  level            Int         @default(1)
-  photoUrl         String?
-  rareDiscoveries  Int         @default(0)
-  totalDiscoveries Int         @default(0)
-  username         String
-  xp               Int         @default(0)
-  name             String
-  password         String
-  AIScan           AIScan[]
-  Discovery        Discovery[]
+  totalDiscoveries Int @default(0)
 
-  @@index([username])
+  discoveries Discovery[]
+  rarityStats DistrictObjectRarity[]
+
+  @@unique([country, state, district])
 }

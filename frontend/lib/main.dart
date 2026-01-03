@@ -2,6 +2,7 @@ import 'package:camera/camera.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/firebase_options.dart';
+import 'package:frontend/models/authGate.dart';
 import 'package:frontend/screens/authScreen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -30,7 +31,7 @@ class _MyAppState extends State<MyApp> {
           ThemeData.light(useMaterial3: true).textTheme,
         ).apply(decoration: TextDecoration.none),
       ),
-      home: LoginPage(),
+      home: AuthGate(),
     );
   }
 }

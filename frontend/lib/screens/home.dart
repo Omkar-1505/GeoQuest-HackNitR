@@ -4,7 +4,9 @@ import 'dart:convert';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:frontend/auth_service.dart';
 import 'package:frontend/models/discovery.dart';
+import 'package:frontend/screens/authScreen.dart';
 import 'package:frontend/screens/cameraScreen.dart';
 import 'package:frontend/screens/imagePreviewScreen.dart';
 import 'package:frontend/screens/storedImageScreen.dart';
@@ -234,6 +236,40 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Colors.black,
                   size: 32,
                 ),
+              ),
+            ),
+          ),
+
+          /// LoaggOut FLOATING BUTTON
+          Positioned(
+            bottom: 130,
+            left: 10,
+            child: GestureDetector(
+              onTap: () async {
+                final auth = AuthService();
+                await auth.signOut();
+                if (mounted) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                  );
+                }
+              },
+              child: Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.greenAccent.withOpacity(0.6),
+                      blurRadius: 24,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.logout, color: Colors.black, size: 32),
               ),
             ),
           ),

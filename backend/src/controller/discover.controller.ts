@@ -5,11 +5,30 @@ import prisma from "../config/Configs";
 
 export const AnalyzeAndUpload = asyncHandler(
   async (req: Request, res: Response) => {
-    const file = req.file;
+    // 1. Handle Image Input (File or Base64)
+    let fileBuffer: Buffer | undefined;
+    let mimeType: string = "image/jpeg";
+
+    if (req.file) {
+      fileBuffer = req.file.buffer;
+      mimeType = req.file.mimetype;
+    } else if (req.body.image) {
+      try {
+        const base64Data = req.body.image.replace(/^data:image\/\w+;base64,/, "");
+        fileBuffer = Buffer.from(base64Data, 'base64');
+      } catch (e) {
+        return res.status(400).json({ error: "Invalid Base64 Image" });
+      }
+    }
+
+    if (!fileBuffer) {
+      return res.status(400).json({ error: "No image provided. Send 'photo' file or 'image' base64 string." });
+    }
+
     const userId = (req as any).user?.uid;
     const { latitude, longitude, district, state, country } = req.body;
 
-    if (!file || !userId) return res.status(400).json({ error: "Invalid Request" });
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const locationContext = `${district || "Unknown"}, ${state || "Unknown"}, ${country || "India"}`;
     // ID: IN_OD_ROURKELA
@@ -20,7 +39,7 @@ export const AnalyzeAndUpload = asyncHandler(
     console.log(` Generating Habit Schedule for: ${locationContext}`);
 
     const uploadPromise = imagekit.upload({
-      file: file.buffer,
+      file: fileBuffer,
       fileName: `geo_${Date.now()}_${userId}.jpg`,
       folder: "/geoquest/discoveries",
     });
@@ -40,7 +59,8 @@ export const AnalyzeAndUpload = asyncHandler(
         2. Assess Health (0-100 score).
         3. Generate a "Habit Schedule" (Quests) for the user to follow.
         4. IMAGE SOURCE CHECK: Determine if this image is a direct photo of a real plant OR a photo of a screen/digital display/photo.
-        
+        5. NAMING: Provide a "canonicalName" which is the most common, broad English name (e.g. use "Money Plant" for Epipremnum aureum, not "Devil's Ivy").
+
         CRITICAL RULES:
         - If the image looks like it was taken from a screen, monitor, or is a photo of another photo:
           -> SET "confidence" to < 0.4 (PENALIZE HEAVILY).
@@ -53,6 +73,7 @@ export const AnalyzeAndUpload = asyncHandler(
         {
           "isPlant": true,
           "commonName": "string",
+          "canonicalName": "string",
           "scientificName": "string",
           "description": "string",
           "confidence": 0.95,
@@ -92,7 +113,7 @@ export const AnalyzeAndUpload = asyncHandler(
         contents: [{
           role: "user",
           parts: [
-            { inlineData: { mimeType: (file.mimetype === "application/octet-stream" ? "image/jpeg" : file.mimetype) || "image/jpeg", data: file.buffer.toString("base64") } },
+            { inlineData: { mimeType: (mimeType === "application/octet-stream" ? "image/jpeg" : mimeType) || "image/jpeg", data: fileBuffer.toString("base64") } },
             { text: questPrompt }
           ]
         }],

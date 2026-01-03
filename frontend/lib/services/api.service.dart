@@ -1,7 +1,6 @@
 import 'package:http/http.dart' as http;
-import 'dart:io' show Platform;
-import 'package:http_parser/http_parser.dart';
 import 'dart:convert';
+import 'dart:io';
 
 class ApiService {
   // Use 10.0.2.2 for Android Emulator, localhost for iOS/Web
@@ -52,30 +51,28 @@ class ApiService {
       String? country,
   }) async {
     final uri = Uri.parse("$baseUrl/discover/scan");
-    final request = http.MultipartRequest("POST", uri);
+    
+    // Read file and convert to Base64
+    final bytes = await File(imagePath).readAsBytes();
+    final base64Image = base64Encode(bytes);
 
-    request.headers['Authorization'] = 'Bearer $firebaseToken';
+    final response = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $firebaseToken',
+      },
+      body: jsonEncode({
+        'image': base64Image,
+        'latitude': latitude,
+        'longitude': longitude,
+        'district': district,
+        'state': state,
+        'country': country,
+      }),
+    ).timeout(const Duration(seconds: 60)); // Increased timeout for large payload
 
-    final mimeType = imagePath.toLowerCase().endsWith(".png")
-        ? MediaType("image", "png")
-        : MediaType("image", "jpeg");
-
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        "photo",
-        imagePath,
-        contentType: mimeType,
-      ),
-    );
-
-    request.fields['latitude'] = latitude.toString();
-    request.fields['longitude'] = longitude.toString();
-    if (district != null) request.fields['district'] = district;
-    if (state != null) request.fields['state'] = state;
-    if (country != null) request.fields['country'] = country;
-
-    final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
-    return await http.Response.fromStream(streamedResponse);
+    return response;
   }
   static Future<List<dynamic>> getUserDiscoveries(String firebaseToken) async {
     try {

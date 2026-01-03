@@ -11,8 +11,13 @@ import 'package:geolocator/geolocator.dart';
 
 class ImagePreviewScreen extends StatefulWidget {
   final String imagePath;
+  final Map<String, dynamic>? existingData; // NEW: Accept existing data for view-only mode
 
-  const ImagePreviewScreen({super.key, required this.imagePath});
+  const ImagePreviewScreen({
+    super.key, 
+    required this.imagePath, 
+    this.existingData
+  });
 
   @override
   State<ImagePreviewScreen> createState() => _ImagePreviewScreenState();
@@ -30,11 +35,21 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
   @override
   void initState() {
     super.initState();
-    _loadFromCacheOrGenerate();
+    _loadData();
   }
 
-  // cache handle
-  Future<void> _loadFromCacheOrGenerate() async {
+  // Determine source of data
+  Future<void> _loadData() async {
+    // 1. If we passed data directly (View Mode), use it.
+    if (widget.existingData != null) {
+      setState(() {
+        plantData = widget.existingData;
+        isLoading = false;
+      });
+      return;
+    }
+
+    // 2. Otherwise check cache or scan (Scan Mode)
     final prefs = await SharedPreferences.getInstance();
     final cached = prefs.getString(_cacheKey);
 
@@ -287,7 +302,9 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: Image.file(File(widget.imagePath), fit: BoxFit.cover),
+            child: widget.imagePath.startsWith("http")
+                ? Image.network(widget.imagePath, fit: BoxFit.cover)
+                : Image.file(File(widget.imagePath), fit: BoxFit.cover),
           ),
           Positioned.fill(
             child: Container(
@@ -574,6 +591,7 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
                     ),
                   ),
 
+                  if (plantData!["rarity"] != null)
                   _card(
                     "Rarity",
                     Icons.public,
@@ -583,12 +601,12 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
                         _buildInfoRow(
                           Icons.stars,
                           "Level",
-                          plantData!["rarity"]["level"] ?? "Unknown",
+                          plantData!["rarity"]?["level"] ?? "Unknown",
                         ),
                         _buildInfoRow(
                           Icons.place,
                           "Locality",
-                          plantData!["rarity"]["locality"] ?? "Unknown",
+                          plantData!["rarity"]?["locality"] ?? "Unknown",
                         ),
                       ],
                     ),

@@ -1,19 +1,19 @@
 import { Router } from "express";
-import multer from "multer"
+import multer from "multer";
+import { AnalyzeAndUpload } from "../controller/discover.controller";
 
+const discoveryRouter: Router = Router();
 
-const discoveryRouter:Router = Router();
-
-const upload = multer({ 
+const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 } // Limit to 5MB
+  limits: { fileSize: 5 * 1024 * 1024 }, // Limit to 5MB
 });
 
 discoveryRouter.post(
-  "/scan", 
-//   verifyToken,      
+  "/scan",
+  //   verifyToken,
   upload.single("photo"),
-  AnalyzeAndUpload   
+  AnalyzeAndUpload
 );
 
 export default discoveryRouter;

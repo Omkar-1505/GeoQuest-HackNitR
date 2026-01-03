@@ -1,6 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
-import { AnalyzeAndUpload } from "../controller/discover.controller";
+import { AnalyzeAndUpload, getAllDiscoveries, getUserDiscoveries } from "../controller/discover.controller";
 
 const discoveryRouter: Router = Router();
 
@@ -15,5 +15,7 @@ discoveryRouter.post(
   upload.single("photo"),
   AnalyzeAndUpload
 );
+discoveryRouter.get("/feed", getAllDiscoveries);
+discoveryRouter.get("/my-discoveries", getUserDiscoveries);
 
 export default discoveryRouter;

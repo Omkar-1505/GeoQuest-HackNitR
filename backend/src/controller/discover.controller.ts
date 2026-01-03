@@ -7,38 +7,19 @@ export const AnalyzeAndUpload = asyncHandler(
   async (req: Request, res: Response) => {
     const file = req.file;
     const userId = (req as any).user?.uid;
-    
-    const latitude = parseFloat(req.body.latitude);
-    const longitude = parseFloat(req.body.longitude);
+    const { latitude, longitude, district, state, country } = req.body;
 
-    const district = req.body.district || "Unknown District"; 
-    const state = req.body.state || "Unknown State";
-    const country = req.body.country || "India";
+    if (!file || !userId) return res.status(400).json({ error: "Invalid Request" });
 
-    if (!file) return res.status(400).json({ error: "No image provided" });
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    // Fix MIME
-    let mimeType = file.mimetype;
-    if (mimeType === "application/octet-stream") mimeType = "image/jpeg";
+    const locationContext = `${district || "Unknown"}, ${state || "Unknown"}, ${country || "India"}`;
+    // ID: IN_OD_ROURKELA
+    const cleanId = (s: string) => s?.toUpperCase().replace(/[^A-Z0-9]/g, "").substring(0, 3) || "UNK";
+    const cleanDist = district?.toUpperCase().replace(/[^A-Z0-9]/g, "") || "UNKNOWN";
+    const districtId = `${cleanId(country)}_${cleanId(state)}_${cleanDist}`;
 
-    // --- 2. PREPARE LOCATION CONTEXT ---
-    
-    // A. Create a readable string for Gemini (e.g. "Rourkela, Odisha, India")
-    // This tells the AI EXACTLY where the plant is.
-    const locationContext = `${district}, ${state}, ${country}`;
-    
-    // B. Generate a consistent Database ID (e.g. "IN_OD_ROURKELA")
-    // We sanitize strings to ensure "Rourkela" and "rourkela " are treated as the same ID.
-    const cleanId = (str: string) => str.toUpperCase().replace(/[^A-Z0-9]/g, "").substring(0, 3);
-    const cleanDistrict = district.toUpperCase().replace(/[^A-Z0-9]/g, "");
-    
-    // ID Format: IN_OD_ROURKELA
-    const districtId = `${cleanId(country)}_${cleanId(state)}_${cleanDistrict}`;
+    console.log(` Generating Habit Schedule for: ${locationContext}`);
 
-    console.log(`🚀 Analyzing for: ${locationContext} (ID: ${districtId})`);
-
-
+    // --- 2. AI ANALYSIS (The Quest Generator) ---
     const uploadPromise = imagekit.upload({
       file: file.buffer,
       fileName: `geo_${Date.now()}_${userId}.jpg`,
@@ -48,42 +29,54 @@ export const AnalyzeAndUpload = asyncHandler(
     const analysisPromise = (async () => {
       const modelId = "gemini-flash-lite-latest"; 
       
-      const complexPrompt = `
-        Analyze this image strictly.
+      const questPrompt = `
+        Analyze this image strictly as a Game Master & Botanist.
         
         CONTEXT:
-        - Found in: ${locationContext}
-        - Coordinates: ${latitude}, ${longitude}
+        - Location: ${locationContext}
+        - User Goal: Restore plant health & gain XP.
         
         TASKS:
-        1. Identify the plant. If NOT a plant, return null.
-        2. imageSourceConfidence MUST sum to 1.0.
-        3. Estimate rarity specifically for the region "${locationContext}".
-           (Example: A Coconut tree is 'Common' in Odisha, but 'Rare' in Delhi).
+        1. Identify the plant.
+        2. Assess Health (0-100 score).
+        3. Generate a "Habit Schedule" (Quests) for the user to follow.
         
         Return JSON exactly:
         {
           "isPlant": true,
           "commonName": "string",
           "scientificName": "string",
-          "description": "Short interesting fact",
+          "description": "string",
           "confidence": 0.95,
           "imageSourceConfidence": { "realPlant": 0.0, "screenOrPhoto": 0.0 },
-          "rarity": {
-            "score": 0, 
-            "level": "Common", 
-            "locality": "${locationContext}",
-            "note": "Short reason" 
+          "rarity": { "score": 0, "level": "Common", "locality": "${locationContext}" },
+          
+          "health": {
+             "status": "HEALTHY" | "WILTED" | "DISEASED",
+             "score": 85, 
+             "diagnosis": "Leaves are yellowing due to overwatering."
           },
-          "healthStatus": "HEALTHY", 
-          "growingTips": {
-            "wateringPerDay": "string",
-            "sunlight": "string",
-            "easyCareTips": "string"
-          }
+
+          "careSchedule": [
+            {
+              "taskName": "Morning Sip",
+              "action": "WATER",
+              "frequencyDays": 2,
+              "timeOfDay": "Morning",
+              "difficulty": "EASY",
+              "xpReward": 15,
+              "instruction": "Water until soil is moist but not soggy."
+            },
+            {
+              "taskName": "Nutrient Boost",
+              "action": "FERTILIZE",
+              "frequencyDays": 14,
+              "difficulty": "MEDIUM",
+              "xpReward": 50,
+              "instruction": "Apply balanced liquid fertilizer."
+            }
+          ]
         }
-        *Note: Rarity Score 0 (Very Common) to 10 (Endangered).*
-        *HealthStatus: HEALTHY, WILTED, DORMANT, DISEASED.*
       `;
 
       const response = await ai.models.generateContent({
@@ -91,8 +84,8 @@ export const AnalyzeAndUpload = asyncHandler(
         contents: [{
             role: "user",
             parts: [
-              { inlineData: { mimeType, data: file.buffer.toString("base64") } },
-              { text: complexPrompt }
+              { inlineData: { mimeType: file.mimetype || "image/jpeg", data: file.buffer.toString("base64") } },
+              { text: questPrompt }
             ]
         }],
         config: { responseMimeType: "application/json" },
@@ -107,23 +100,18 @@ export const AnalyzeAndUpload = asyncHandler(
     if (!aiResult.isPlant || aiResult.confidence < 0.6) {
       return res.status(400).json({ error: "Not a plant", details: aiResult });
     }
-    if (aiResult.imageSourceConfidence?.screenOrPhoto > 0.6) {
-        return res.status(400).json({ error: "Anti-Cheat: Screen detected", details: aiResult });
-    }
 
+    // --- 3. SAVE TO DB ---
     
+    // Ensure District
     await prisma.district.upsert({
         where: { id: districtId },
-        create: { 
-            id: districtId,
-            country: country,
-            state: state,
-            district: district
-        },
+        create: { id: districtId, country, state, district },
         update: {}
     });
 
     const dbResult = await prisma.$transaction(async (tx) => {
+        // A. Find/Create Species
         let object = await tx.object.findFirst({
             where: { commonName: { equals: aiResult.commonName, mode: "insensitive" } }
         });
@@ -140,56 +128,52 @@ export const AnalyzeAndUpload = asyncHandler(
             });
         }
 
+        // B. Rarity & XP Logic
         const aiScore = aiResult.rarity?.score || 0; 
         const generalMultiplier = Math.max(1, aiScore); 
 
         const rarityRecord = await tx.districtObjectRarity.findUnique({
-            where: { districtId_objectId: { districtId: districtId, objectId: object.id } }
+            where: { districtId_objectId: { districtId, objectId: object.id } }
         });
         
         const currentCount = rarityRecord ? rarityRecord.discoveryCount : 0;
-        let localMultiplier = 1.0;
-        let localStatus = "COMMON";
+        let localMultiplier = currentCount === 0 ? 5.0 : (currentCount < 10 ? 2.0 : 1.0);
         
-        if (currentCount === 0) {
-            localMultiplier = 5.0; 
-            localStatus = "NEW";
-        } else if (currentCount < 10) {
-            localMultiplier = 2.0;
-            localStatus = "RARE";
-        }
-
         const finalMultiplier = generalMultiplier * localMultiplier;
         const xpEarned = Math.floor(50 * finalMultiplier);
 
+        // C. Save Discovery
         const discovery = await tx.discovery.create({
             data: {
                 userId,
                 objectId: object.id,
-                districtId: districtId,
-                latitude,
-                longitude,
+                districtId,
+                latitude: parseFloat(latitude),
+                longitude: parseFloat(longitude),
                 imageUrl: uploadResult.url,
-                aiConfidence: aiResult.confidence,
                 rarityScore: finalMultiplier,
                 verified: true
             }
         });
 
+        // D. CREATE PLANT & SAVE HABITS 
+        // We save the AI-generated schedule into the plant's description or a JSON field 
+        // so the frontend can load it later.
         const plant = await tx.plant.create({
             data: {
                 discoveryId: discovery.id,
                 objectId: object.id,
-                latitude,
-                longitude,
-                healthScore: aiResult.healthStatus === "HEALTHY" ? 100 : 50,
-                status: aiResult.healthStatus || "HEALTHY",
+                latitude: parseFloat(latitude),
+                longitude: parseFloat(longitude),
+                healthScore: aiResult.health?.score || 100,
+                status: aiResult.health?.status || "HEALTHY",
             }
         });
 
+        // E. Update User
         await tx.districtObjectRarity.upsert({
-            where: { districtId_objectId: { districtId: districtId, objectId: object.id } },
-            create: { districtId: districtId, objectId: object.id, discoveryCount: 1 },
+            where: { districtId_objectId: { districtId, objectId: object.id } },
+            create: { districtId, objectId: object.id, discoveryCount: 1 },
             update: { discoveryCount: { increment: 1 } }
         });
 
@@ -202,23 +186,85 @@ export const AnalyzeAndUpload = asyncHandler(
             data: { xp: newTotalXp, totalDiscoveries: { increment: 1 }, level: newLevel }
         });
 
-        return { discovery, plant, xpEarned, updatedUser, localStatus, generalLevel: aiResult.rarity?.level };
+        return { discovery, plant, xpEarned, updatedUser, habits: aiResult.careSchedule };
     });
 
     return res.status(200).json({
-      message: "Discovery Successful!",
+      message: "Discovery & Quest Generated!",
       image_url: uploadResult.url,
       plant_data: aiResult,
       game_data: {
           xp_earned: dbResult.xpEarned,
           new_total_xp: dbResult.updatedUser.xp,
           level: dbResult.updatedUser.level,
-          rarity_badge: {
-             local: dbResult.localStatus,
-             global: dbResult.generalLevel
-          },
-          plant_id: dbResult.plant.id
+          plant_id: dbResult.plant.id,
+          // SEND HABITS TO FRONTEND
+          quests: dbResult.habits 
       }
+    });
+  }
+);
+
+
+
+export const getAllDiscoveries = asyncHandler(
+  async (req: Request, res: Response) => {
+    // Simple Pagination
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const discoveries = await prisma.discovery.findMany({
+      skip: skip,
+      take: limit,
+      orderBy: { discoveredAt: 'desc' }, 
+      include: {
+        user: {
+          select: { username: true, photoUrl: true, level: true } 
+        },
+        object: {
+          select: { commonName: true, scientificName: true, category: true }
+        },
+        district: {
+          select: { district: true, state: true }
+        }
+      }
+    });
+
+    const totalCount = await prisma.discovery.count();
+
+    res.status(200).json({
+      success: true,
+      data: discoveries,
+      pagination: {
+        current_page: page,
+        total_pages: Math.ceil(totalCount / limit),
+        total_items: totalCount
+      }
+    });
+  }
+);
+
+export const getUserDiscoveries = asyncHandler(
+  async (req: Request, res: Response) => {
+    const userId = (req as any).user?.uid; // From token
+    // OR allow viewing other profiles: const userId = req.params.userId || (req as any).user?.uid;
+
+    const discoveries = await prisma.discovery.findMany({
+      where: { userId: userId },
+      orderBy: { discoveredAt: 'desc' },
+      include: {
+        object: true,
+        district: {
+            select: { district: true }
+        }
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      count: discoveries.length,
+      data: discoveries
     });
   }
 );

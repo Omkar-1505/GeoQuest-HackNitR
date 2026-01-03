@@ -13,6 +13,7 @@ import 'package:frontend/screens/authScreen.dart';
 import 'package:frontend/screens/cameraScreen.dart';
 import 'package:frontend/screens/imagePreviewScreen.dart';
 import 'package:frontend/screens/storedImageScreen.dart';
+import 'package:frontend/screens/userDetailScreen.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -168,6 +169,14 @@ class _HomeScreenState extends State<HomeScreen> {
     _markers = {};
 
     for (var d in _discoveries) {
+      // Quality Control: Filter out low confidence scans
+      // Default to 1.0 (show it) if confidence is missing (legacy data or not yet analyzed)
+      final double confidence = (d.plantData['confidence'] is num) 
+          ? (d.plantData['confidence'] as num).toDouble() 
+          : 1.0;
+
+      if (confidence < 0.5) continue;
+
       final icon = await _createCustomMarkerBitmap(d.imagePath);
       _markers.add(
         Marker(
@@ -589,11 +598,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Expanded(
                             child: _actionTile(
-                              icon: Icons.person,
-                              label: "Community",
+                              icon: Icons.person_pin,
+                              label: "Profile",
                               color: Colors.orange,
                               onTap: () {
-                                // go home
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const UserDetailScreen(),
+                                  ),
+                                );
                               },
                             ),
                           ),

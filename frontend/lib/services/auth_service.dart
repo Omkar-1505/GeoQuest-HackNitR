@@ -8,6 +8,7 @@ import 'package:frontend/screens/authScreen.dart';
 import 'package:frontend/screens/home.dart';
 import 'package:frontend/services/api.service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   final FirebaseAuth auth = FirebaseAuth.instance;
@@ -89,13 +90,24 @@ class AuthService {
            // Force refresh token to ensure we have a valid one
           final String? idToken = await user.getIdToken(true);
           if (idToken != null) {
-            await ApiService.syncUserWithBackend(idToken);
+            final userData = await ApiService.syncUserWithBackend(idToken);
+            if (userData != null) {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setInt('user_xp', userData['xp'] ?? 0);
+              await prefs.setInt('user_level', userData['level'] ?? 1);
+              await prefs.setString('user_username', userData['username'] ?? user.displayName ?? "Explorer");
+            }
           }
         } catch (e) {
           print("⚠️ Backend Sync Warning: $e");
           // optional: don't block login if backend fails, just log it
         }
         // -------------------------
+
+        // Also save basic Firebase info for fallback
+        final prefs = await SharedPreferences.getInstance();
+        if (user.displayName != null) await prefs.setString('user_name', user.displayName!);
+        if (user.photoURL != null) await prefs.setString('user_photo', user.photoURL!);
 
         final userDoc = FirebaseFirestore.instance
             .collection("users")

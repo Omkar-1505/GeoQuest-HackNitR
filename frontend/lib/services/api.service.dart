@@ -1,6 +1,7 @@
 import 'package:http/http.dart' as http;
 import 'dart:io' show Platform;
 import 'package:http_parser/http_parser.dart';
+import 'dart:convert';
 
 class ApiService {
   // Use 10.0.2.2 for Android Emulator, localhost for iOS/Web
@@ -14,7 +15,7 @@ class ApiService {
     return "http://localhost:3000/api";
   }
 
-  static Future<void> syncUserWithBackend(String firebaseToken) async {
+  static Future<Map<String, dynamic>?> syncUserWithBackend(String firebaseToken) async {
     try {
       final url = Uri.parse('$baseUrl/auth/login');
       print("🔌 Syncing with Backend: $url");
@@ -29,11 +30,15 @@ class ApiService {
 
       if (response.statusCode == 200) {
         print("✅ Backend Sync Success: ${response.body}");
+        final jsonResponse = json.decode(response.body);
+        return jsonResponse['data'];
       } else {
         print("❌ Backend Sync Failed (${response.statusCode}): ${response.body}");
+        return null;
       }
     } catch (e) {
       print("⚠️ Connection Error: $e");
+      return null;
     }
   }
 
@@ -71,5 +76,28 @@ class ApiService {
 
     final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
     return await http.Response.fromStream(streamedResponse);
+  }
+  static Future<List<dynamic>> getUserDiscoveries(String firebaseToken) async {
+    try {
+      final url = Uri.parse('$baseUrl/discover/my-discoveries');
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $firebaseToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        return jsonResponse['data'] ?? [];
+      } else {
+        print("❌ Fetch Discoveries Failed (${response.statusCode}): ${response.body}");
+        return [];
+      }
+    } catch (e) {
+      print("⚠️ Connection Error: $e");
+      return [];
+    }
   }
 }

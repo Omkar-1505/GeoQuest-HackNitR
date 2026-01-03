@@ -13,7 +13,11 @@ import 'package:frontend/screens/authScreen.dart';
 import 'package:frontend/screens/cameraScreen.dart';
 import 'package:frontend/screens/imagePreviewScreen.dart';
 import 'package:frontend/screens/storedImageScreen.dart';
+<<<<<<< HEAD
 import 'package:frontend/screens/leader.dart';
+=======
+import 'package:frontend/screens/userDetailScreen.dart';
+>>>>>>> a46a75c3737bf95e99f261f492704cb8a36f796d
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -169,6 +173,14 @@ class _HomeScreenState extends State<HomeScreen> {
     _markers = {};
 
     for (var d in _discoveries) {
+      // Quality Control: Filter out low confidence scans
+      // Default to 1.0 (show it) if confidence is missing (legacy data or not yet analyzed)
+      final double confidence = (d.plantData['confidence'] is num) 
+          ? (d.plantData['confidence'] as num).toDouble() 
+          : 1.0;
+
+      if (confidence < 0.5) continue;
+
       final icon = await _createCustomMarkerBitmap(d.imagePath);
       _markers.add(
         Marker(
@@ -590,15 +602,24 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Expanded(
                             child: _actionTile(
+<<<<<<< HEAD
                               icon: Icons.leaderboard,
                               label: "Leaderboard",
+=======
+                              icon: Icons.person_pin,
+                              label: "Profile",
+>>>>>>> a46a75c3737bf95e99f261f492704cb8a36f796d
                               color: Colors.orange,
                               onTap: () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
+<<<<<<< HEAD
                                     builder: (context) =>
                                         const LeaderboardPage(),
+=======
+                                    builder: (_) => const UserDetailScreen(),
+>>>>>>> a46a75c3737bf95e99f261f492704cb8a36f796d
                                   ),
                                 );
                               },

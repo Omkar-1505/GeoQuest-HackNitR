@@ -137,6 +137,18 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_cacheKey, json.encode(data));
 
+      // UPDATE DISCOVERIES LIST WITH PLANT DATA
+      final discoveries = prefs.getStringList('discoveries') ?? [];
+      final updatedDiscoveries = discoveries.map((d) {
+        final decoded = json.decode(d);
+        if (decoded['imagePath'] == widget.imagePath) {
+          decoded['plantData'] = data;
+          return json.encode(decoded);
+        }
+        return d;
+      }).toList();
+      await prefs.setStringList('discoveries', updatedDiscoveries);
+
       setState(() {
         plantData = data;
         isLoading = false;

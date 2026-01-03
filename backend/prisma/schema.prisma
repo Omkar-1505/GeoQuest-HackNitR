@@ -1,18 +1,20 @@
 generator client {
-  provider = "prisma-client-js"  // Must be EXACTLY this string
+  provider = "prisma-client-js" // Must be EXACTLY this string
   // output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+  // url      = env("DATABASE_URL")
 }
 
 model User {
-  id       String   @id @default(uuid())
-  name     String
-  password String
-  username String
-  email    String   @unique
+  id       String  @id
+  name     String?
+  // password String
+  username String? @unique
+  email    String  @unique
+
   photoUrl String?
   joinedAt DateTime @default(now())
 
@@ -23,7 +25,7 @@ model User {
   level            Int   @default(1)
 
   isPremium Boolean @default(false)
-  aiCredits Int     @default(5)
+  // aiCredits Int     @default(5)
 
   discoveries Discovery[]
   aiScans     AIScan[]

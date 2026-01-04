@@ -38,7 +38,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
-      
+
       final token = await user.getIdToken();
       if (token == null) return;
 
@@ -61,7 +61,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
 
       final mappedDiscoveries = discoveriesList.map((d) {
         return Discovery(
-          imagePath: d['imageUrl'] ?? "", 
+          imagePath: d['imageUrl'] ?? "",
           lat: (d['latitude'] as num?)?.toDouble() ?? 0.0,
           lng: (d['longitude'] as num?)?.toDouble() ?? 0.0,
           plantData: {
@@ -84,8 +84,8 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                     }
                   ], 
             "health": {
-              "score": d['plant']?['healthScore'] ?? 0, 
-              "status": d['plant']?['status'] ?? "Check Details"
+              "score": d['healthScore'] ?? 0, 
+              "status": "Check Details"
             },
             "confidence": d['aiConfidence'] ?? d['confidence'] ?? 1.0,
             "imageSourceConfidence": {
@@ -99,7 +99,8 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
       if (mounted) {
         setState(() {
           if (profileData != null) {
-            userName = profileData['username'] ?? user.displayName ?? "Explorer";
+            userName =
+                profileData['username'] ?? user.displayName ?? "Explorer";
             userXp = profileData['xp'] ?? 0;
             userLevel = profileData['level'] ?? 1;
             userPhoto = user.photoURL;
@@ -234,12 +235,16 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
         children: [
           // Background Gradient (Fixed behind scroll)
           Positioned.fill(
-             child: Container(
+            child: Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
+                  colors: [
+                    Color(0xFF0F2027),
+                    Color(0xFF203A43),
+                    Color(0xFF2C5364),
+                  ],
                 ),
               ),
             ),
@@ -260,30 +265,11 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                         _buildProfileHeader(),
                         const SizedBox(height: 30),
                         _buildStatsRow(),
-                        
-                        // NEW: Adopted Plants Section
-                        if (myGarden.isNotEmpty) ...[
-                          const SizedBox(height: 40),
-                          const Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              "My Adopted Plants 🌿",
-                              style: TextStyle(
-                                color: Colors.greenAccent,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildGardenSection(),
-                        ],
-                        
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 30),
                         const Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            "All Discoveries",
+                            "Your Garden",
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 20,
@@ -330,7 +316,6 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                 ),
 
               if (xpHistory.isNotEmpty) ...[
-                // ... (History header kept same)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -359,7 +344,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                         ),
                         child: Row(
                           children: [
-                             Container(
+                            Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color: (isDiscovery ? Colors.green : Colors.blue).withOpacity(0.2),
@@ -371,7 +356,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                 size: 20,
                               ),
                             ),
-                             const SizedBox(width: 14),
+                            const SizedBox(width: 14),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -393,7 +378,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                 ],
                               ),
                             ),
-                             Text(
+                            Text(
                               "+${item['xp']} XP",
                               style: const TextStyle(
                                 color: Colors.amber,
@@ -425,7 +410,11 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white24),
                 ),
-                child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
             ),
           ),
@@ -589,14 +578,16 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                 color: Colors.greenAccent.withOpacity(0.3),
                 blurRadius: 20,
                 spreadRadius: 2,
-              )
+              ),
             ],
           ),
           child: CircleAvatar(
             radius: 50,
             backgroundColor: Colors.grey[800],
-            backgroundImage: userPhoto != null ? NetworkImage(userPhoto!) : null,
-            child: userPhoto == null 
+            backgroundImage: userPhoto != null
+                ? NetworkImage(userPhoto!)
+                : null,
+            child: userPhoto == null
                 ? const Icon(Icons.person, size: 50, color: Colors.white)
                 : null,
           ),
@@ -644,13 +635,23 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
         children: [
           _buildStatItem("Total XP", "$userXp", Icons.bolt, Colors.orange),
           Container(width: 1, height: 40, color: Colors.white24),
-          _buildStatItem("Plants", "${discoveries.length}", Icons.local_florist, Colors.green),
+          _buildStatItem(
+            "Plants",
+            "${discoveries.length}",
+            Icons.local_florist,
+            Colors.green,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon, Color color) {
+  Widget _buildStatItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Column(
       children: [
         Icon(icon, color: color, size: 28),
@@ -680,6 +681,9 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     } else if (data['commonName']?.toString().isNotEmpty == true) {
       displayName = data['commonName'];
     }
+
+    // Isolate Health logic if needed, but StoredImageScreen is just an image.
+    // We will keep the image focus but add a small overlay for context.
     
     return GestureDetector(
     onTap: () async {
@@ -733,7 +737,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2), 
+                color: Colors.black.withOpacity(0.2), // Darker shadow for dark bg
                 blurRadius: 12,
                 offset: const Offset(0, 6),
               ),
@@ -748,14 +752,21 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                 ? Image.network(discovery.imagePath, fit: BoxFit.cover) 
                 : Image.file(File(discovery.imagePath), fit: BoxFit.cover),
                 
+                // Subtle Gradient Overlay for Text Visibility
                 Positioned(
-                  bottom: 0, left: 0, right: 0,
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
                   child: Container(
                     height: 50,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.8),
+                        ],
                       ),
                     ),
                   ),
@@ -763,38 +774,18 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
 
                 Positioned(
                   bottom: 10, left: 12, right: 12,
-                  child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      displayName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        decoration: TextDecoration.none, 
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-                // Confidence Warning
-                if ((data['confidence'] as num? ?? 1.0) < 0.8)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.priority_high, color: Colors.redAccent, size: 20),
+                  child: Text(
+                    displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      decoration: TextDecoration.none, // Fix Hero text glitch
                     ),
                   ),
+                ),
               ],
             ),
           ),

@@ -233,7 +233,11 @@ export const AnalyzeAndUpload = asyncHandler(
           latitude: parseFloat(latitude),
           longitude: parseFloat(longitude),
           imageUrl: uploadResult.url,
+<<<<<<< HEAD
           aiConfidence: aiResult.imageSourceConfidence?.realPlant ?? aiResult.confidence, // Save REALNESS score
+=======
+          aiConfidence: aiResult.confidence,
+>>>>>>> 8badd845a4f4882aeacc7aa4d3d12f3768f893d1
           rarityScore: finalMultiplier,
           verified: true
         }
@@ -358,6 +362,7 @@ export const getUserDiscoveries = asyncHandler(
       orderBy: { discoveredAt: 'desc' },
       include: {
         object: true,
+        plant: true,
         district: {
           select: { district: true }
         },

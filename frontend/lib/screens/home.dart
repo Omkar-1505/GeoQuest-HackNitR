@@ -361,88 +361,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-
-          /// TOP GLASS APP BAR
-          // Positioned(
-          //   top: 64,
-          //   left: 0,
-          //   right: 0,
-          //   child: Align(
-          //     alignment: Alignment.topCenter,
-          // child: ClipRRect(
-          //   borderRadius: BorderRadius.circular(34),
-          //   child: BackdropFilter(
-          //     filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          //     child: Container(
-          //       padding: const EdgeInsets.symmetric(
-          //         horizontal: 22,
-          //         vertical: 12,
-          //       ),
-          //       decoration: BoxDecoration(
-          //         color: Colors.black.withOpacity(0.35), // 👈 key change
-          //         borderRadius: BorderRadius.circular(34),
-          //         border: Border.all(
-          //           color: Colors.white.withOpacity(0.18),
-          //           width: 1,
-          //         ),
-          //         boxShadow: [
-          //           BoxShadow(
-          //             color: Colors.black.withOpacity(0.25),
-          //             blurRadius: 18,
-          //             offset: const Offset(0, 10),
-          //           ),
-          //         ],
-          //       ),
-          //           child: const Text(
-          //             "GeoQuest",
-          //             style: TextStyle(
-          //               color: Colors.white,
-          //               fontWeight: FontWeight.w700,
-          //               fontSize: 20,
-          //               letterSpacing: 1.3,
-          //             ),
-          //           ),
-          //         ),
-          //       ),
-          //     ),
-          //   ),
-          // ),
-
-          // location botton
-          // Positioned(
-          //   top: 64, // aligns vertically with title
-          //   right: 20,
-          //   child: GestureDetector(
-          //     onTap: _goToCurrentLocation, // optional
-          //     child: ClipOval(
-          //       child: BackdropFilter(
-          //         filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          //         child: Container(
-          //           width: 42,
-          //           height: 42,
-          //           decoration: BoxDecoration(
-          //             color: Colors.black.withOpacity(0.4),
-          //             border: Border.all(
-          //               color: Colors.greenAccent.withOpacity(0.4),
-          //             ),
-          //             shape: BoxShape.circle,
-          //             boxShadow: [
-          //               BoxShadow(
-          //                 color: Colors.greenAccent.withOpacity(0.3),
-          //                 blurRadius: 12,
-          //               ),
-          //             ],
-          //           ),
-          //           child: const Icon(
-          //             Icons.my_location,
-          //             color: Colors.greenAccent,
-          //             size: 22,
-          //           ),
-          //         ),
-          //       ),
-          //     ),
-          //   ),
-          // ),
           Positioned(
             top: 55,
             left: 0,
@@ -586,7 +504,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => const UserDetailScreen(),
+                                    builder: (_) => const StoredImageScreen(),
                                   ),
                                 );
                               },
@@ -649,7 +567,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 final String lat = location.latitude.toStringAsFixed(6);
                 final String lng = location.longitude.toStringAsFixed(6);
                 final String mapLink = "https://maps.google.com/?q=$lat,$lng";
-                
+
                 final Uri smsLaunchUri = Uri(
                   scheme: 'sms',
                   path: '112', // Emergency number or user defined contact
@@ -659,14 +577,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
 
                 if (await canLaunchUrl(smsLaunchUri)) {
-                   await launchUrl(smsLaunchUri);
+                  await launchUrl(smsLaunchUri);
                 } else {
-                   // Fallback if SMS fails
-                   if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Could not launch SMS. Authority notified via App.")),
-                      );
-                   }
+                  // Fallback if SMS fails
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          "Could not launch SMS. Authority notified via App.",
+                        ),
+                      ),
+                    );
+                  }
                 }
               },
             ),
